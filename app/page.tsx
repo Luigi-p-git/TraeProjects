@@ -5,10 +5,11 @@ import { motion } from 'framer-motion'
 import { 
   Plus, Search, Filter, DollarSign, Calendar, TrendingUp, 
   AlertTriangle, Zap, Target, BarChart3, Globe, 
-  Sparkles, Activity, Clock, Wallet
+  Sparkles, Activity, Clock, Wallet, Bot
 } from 'lucide-react'
 import SubscriptionCard from './SubscriptionCard.tsx'
 import AddSubscriptionModal from './AddSubscriptionModal.tsx'
+import AutoDetectionModal from './AutoDetectionModal.tsx'
 import StatsCard from './StatsCard.tsx'
 import { Subscription } from './types'
 
@@ -40,6 +41,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAutoDetectionOpen, setIsAutoDetectionOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   const categories = ['All', ...new Set(subscriptions.map(sub => sub.category))]
@@ -105,6 +107,19 @@ export default function Home() {
       billingCycle: (billingCycle === 'monthly' || billingCycle === 'yearly') ? billingCycle : 'monthly'
     }
     const updatedSubscriptions = [...subscriptions, subscription]
+    setSubscriptions(updatedSubscriptions)
+    saveSubscriptions(updatedSubscriptions)
+  }
+
+  const addMultipleSubscriptions = (newSubscriptions: Omit<Subscription, 'id'>[]) => {
+    const subscriptionsWithIds = newSubscriptions.map((sub, index) => ({
+      ...sub,
+      id: (Date.now() + index).toString(),
+      website: sub.website || '',
+      color: sub.color || '#6366F1',
+      billingCycle: (sub.billingCycle === 'monthly' || sub.billingCycle === 'yearly') ? sub.billingCycle : 'monthly'
+    }))
+    const updatedSubscriptions = [...subscriptions, ...subscriptionsWithIds]
     setSubscriptions(updatedSubscriptions)
     saveSubscriptions(updatedSubscriptions)
   }
@@ -362,6 +377,15 @@ export default function Home() {
               </select>
             </div>
             <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(139, 69, 255, 0.3)" }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsAutoDetectionOpen(true)}
+              className="flex items-center gap-3 px-6 py-4 bg-gradient-secondary text-white rounded-xl transition-all shadow-lg hover:shadow-purple-500/25 neon-glow"
+            >
+              <Bot className="w-5 h-5" />
+              Auto-Detect
+            </motion.button>
+            <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(0, 255, 255, 0.3)" }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsModalOpen(true)}
@@ -439,6 +463,13 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAdd={addSubscription}
+      />
+
+      {/* Auto Detection Modal */}
+      <AutoDetectionModal
+        isOpen={isAutoDetectionOpen}
+        onClose={() => setIsAutoDetectionOpen(false)}
+        onAddSubscriptions={addMultipleSubscriptions}
       />
     </div>
   )
