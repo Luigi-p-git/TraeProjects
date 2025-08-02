@@ -258,14 +258,26 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
               )}
             </motion.button>
 
-            <div className="relative">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="relative"
+            >
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-gray-900 text-white/60">or continue with email</span>
+                <motion.span 
+                  whileHover={{ scale: 1.05 }}
+                  className="px-6 py-2 bg-gradient-to-r from-slate-800/90 via-purple-900/90 to-slate-800/90 backdrop-blur-sm border border-white/10 rounded-full text-white/70 font-medium shadow-lg"
+                >
+                  <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                    or continue with email
+                  </span>
+                </motion.span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Name field for signup */}
             {mode === 'signup' && (
