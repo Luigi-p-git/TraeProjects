@@ -5,12 +5,14 @@ import { motion } from 'framer-motion'
 import { 
   Plus, Search, Filter, DollarSign, Calendar, TrendingUp, 
   AlertTriangle, Zap, Target, BarChart3, Globe, 
-  Sparkles, Activity, Clock, Wallet, Bot
+  Sparkles, Activity, Clock, Wallet, Bot, LogOut, User
 } from 'lucide-react'
 import SubscriptionCard from './SubscriptionCard.tsx'
 import AddSubscriptionModal from './AddSubscriptionModal.tsx'
 import AutoDetectionModal from './AutoDetectionModal.tsx'
 import StatsCard from './StatsCard.tsx'
+import LoginPage from './LoginPage'
+import { authService } from './AuthService'
 import { Subscription } from './types'
 
 // Load subscriptions from localStorage or start with empty array
@@ -32,11 +34,42 @@ const saveSubscriptions = (subscriptions: Subscription[]) => {
 }
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   
-  // Load subscriptions on component mount
+  // Check authentication status and load subscriptions
   useEffect(() => {
-    setSubscriptions(loadSubscriptions())
+    const checkAuth = async () => {
+      const authState = authService.getAuthState()
+      setIsAuthenticated(authState.isAuthenticated)
+      
+      if (authState.isAuthenticated) {
+        setSubscriptions(loadSubscriptions())
+      }
+      
+      setIsLoading(false)
+    }
+    
+    checkAuth()
+    
+    // Listen for auth state changes
+    const handleAuthChange = () => {
+      const authState = authService.getAuthState()
+      setIsAuthenticated(authState.isAuthenticated)
+      
+      if (!authState.isAuthenticated) {
+        setSubscriptions([])
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('subscriptions')
+        }
+      }
+    }
+    
+    // Simple polling for auth state changes (in a real app, you'd use proper event listeners)
+    const interval = setInterval(handleAuthChange, 1000)
+    
+    return () => clearInterval(interval)
   }, [])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -124,6 +157,12 @@ export default function Home() {
     saveSubscriptions(updatedSubscriptions)
   }
 
+  const handleLogout = () => {
+    authService.logout()
+    setIsAuthenticated(false)
+    setSubscriptions([])
+  }
+
   const deleteSubscription = (id: string) => {
     const updatedSubscriptions = subscriptions.filter(sub => sub.id !== id)
     setSubscriptions(updatedSubscriptions)
@@ -162,8 +201,61 @@ export default function Home() {
     window.open(url, '_blank')
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60">Loading...</p>
+        </motion.div>
+      </div>
+    )
+  }
+  
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
+
   return (
     <div className="space-y-8">
+      {/* Header with User Menu */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="flex justify-between items-center mb-8"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+          <p className="text-white/60">Welcome back to your subscription manager</p>
+        </div>
+        
+        {/* User Menu */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
+            <User className="w-5 h-5 text-cyan-400" />
+            <span className="text-white/80 text-sm">
+              {authService.getAuthState().user?.email || 'Developer Mode'}
+            </span>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm">Logout</span>
+          </motion.button>
+        </div>
+      </motion.div>
+
       {/* Hero Section with AI Insights */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}

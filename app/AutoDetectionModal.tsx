@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Zap, CheckCircle, AlertCircle, Loader2, Eye, Shield, TrendingUp } from 'lucide-react'
+import { X, Zap, CheckCircle, AlertCircle, Loader2, Eye, Shield, TrendingUp, Mail, Plus } from 'lucide-react'
 import { autoDetectionService, DetectedSubscription } from './AutoDetectionService'
+import { authService, EmailAccount } from './AuthService'
 import { Subscription } from './types'
 
 interface AutoDetectionModalProps {
@@ -13,12 +14,16 @@ interface AutoDetectionModalProps {
 }
 
 export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions }: AutoDetectionModalProps) {
-  const [currentStep, setCurrentStep] = useState<'methods' | 'connecting' | 'detecting' | 'results'>('methods')
+  const [currentStep, setCurrentStep] = useState<'methods' | 'email-select' | 'connecting' | 'detecting' | 'results'>('methods')
   const [selectedMethods, setSelectedMethods] = useState<string[]>([])
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([])
   const [detectedSubscriptions, setDetectedSubscriptions] = useState<DetectedSubscription[]>([])
   const [selectedSubscriptions, setSelectedSubscriptions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState(autoDetectionService.getConnectionStatus())
+  const [userEmails, setUserEmails] = useState<EmailAccount[]>([])
+  const [newEmailForm, setNewEmailForm] = useState({ email: '', provider: 'gmail' as 'gmail' | 'outlook' | 'yahoo' | 'other' })
+  const [showAddEmail, setShowAddEmail] = useState(false)
 
   const methods = autoDetectionService.getAvailableMethods()
 
@@ -26,9 +31,12 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
     if (isOpen) {
       setCurrentStep('methods')
       setSelectedMethods([])
+      setSelectedEmails([])
       setDetectedSubscriptions([])
       setSelectedSubscriptions([])
       setConnectionStatus(autoDetectionService.getConnectionStatus())
+      setUserEmails(authService.getConnectedEmails())
+      setShowAddEmail(false)
     }
   }, [isOpen])
 
@@ -40,9 +48,18 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
     )
   }
 
-  const handleStartDetection = async () => {
+  const handleMethodsNext = () => {
     if (selectedMethods.length === 0) return
     
+    // If email scanning is selected, show email selection
+    if (selectedMethods.includes('email_receipts')) {
+      setCurrentStep('email-select')
+    } else {
+      handleStartDetection()
+    }
+  }
+
+  const handleStartDetection = async () => {
     setIsLoading(true)
     setCurrentStep('connecting')
     
@@ -65,10 +82,21 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
       }
       
       // Handle email scanning
-      if (selectedMethods.includes('email_receipts')) {
+      if (selectedMethods.includes('email_receipts') && selectedEmails.length > 0) {
         setCurrentStep('detecting')
-        const emailDetected = await autoDetectionService.scanEmailReceipts()
-        allDetected = [...allDetected, ...emailDetected]
+        
+        // Scan each selected email account
+        for (const emailId of selectedEmails) {
+          const result = await authService.scanEmailAccount(emailId)
+          if (result.success && result.subscriptions) {
+            const emailDetected = result.subscriptions.map(sub => ({
+              source: 'email_receipts' as const,
+              confidence: 85 + Math.floor(Math.random() * 10),
+              suggestedSubscription: sub
+            }))
+            allDetected = [...allDetected, ...emailDetected]
+          }
+        }
       }
       
       setDetectedSubscriptions(allDetected)
@@ -79,6 +107,25 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
       // Handle error state
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleEmailToggle = (emailId: string) => {
+    setSelectedEmails(prev => 
+      prev.includes(emailId)
+        ? prev.filter(id => id !== emailId)
+        : [...prev, emailId]
+    )
+  }
+
+  const handleAddEmail = async () => {
+    if (!newEmailForm.email) return
+    
+    const result = await authService.addEmailAccount(newEmailForm.email, newEmailForm.provider)
+    if (result.success) {
+      setUserEmails(authService.getConnectedEmails())
+      setNewEmailForm({ email: '', provider: 'gmail' })
+      setShowAddEmail(false)
     }
   }
 
@@ -241,7 +288,7 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
                           boxShadow: selectedMethods.length > 0 ? "0 0 30px rgba(0, 255, 255, 0.3)" : "none"
                         }}
                         whileTap={{ scale: selectedMethods.length > 0 ? 0.98 : 1 }}
-                        onClick={handleStartDetection}
+                        onClick={handleMethodsNext}
                         disabled={selectedMethods.length === 0 || isLoading}
                         className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all shadow-lg ${
                           selectedMethods.length > 0 && !isLoading
@@ -250,7 +297,146 @@ export default function AutoDetectionModal({ isOpen, onClose, onAddSubscriptions
                         }`}
                       >
                         <Zap className="w-5 h-5" />
-                        Start Detection
+                        {selectedMethods.includes('email_receipts') ? 'Next: Select Emails' : 'Start Detection'}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Email Selection */}
+                {currentStep === 'email-select' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-semibold text-white mb-2">Select Email Accounts</h3>
+                      <p className="text-white/60">Choose which email accounts to scan for subscription receipts</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {userEmails.map((email) => (
+                        <motion.div
+                          key={email.id}
+                          whileHover={{ scale: 1.02 }}
+                          className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
+                            selectedEmails.includes(email.id)
+                              ? 'bg-cyan-500/10 border-cyan-500/30'
+                              : 'bg-white/5 border-white/10 hover:border-white/20'
+                          }`}
+                          onClick={() => handleEmailToggle(email.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                                <Mail className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-white">{email.email}</h4>
+                                <div className="flex items-center space-x-2 text-sm text-white/60">
+                                  <span className="capitalize">{email.provider}</span>
+                                  {email.subscriptionCount && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{email.subscriptionCount} subscriptions found</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {selectedEmails.includes(email.id) && (
+                              <CheckCircle className="w-5 h-5 text-cyan-400" />
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+
+                      {/* Add Email Account */}
+                      {!showAddEmail ? (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowAddEmail(true)}
+                          className="w-full p-4 border-2 border-dashed border-white/20 rounded-xl text-white/60 hover:text-white hover:border-white/40 transition-all duration-300"
+                        >
+                          <div className="flex items-center justify-center gap-3">
+                            <Plus className="w-5 h-5" />
+                            <span>Add Another Email Account</span>
+                          </div>
+                        </motion.button>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-white">Add Email Account</h4>
+                            <button
+                              onClick={() => setShowAddEmail(false)}
+                              className="text-white/40 hover:text-white"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <input
+                              type="email"
+                              placeholder="Email address"
+                              value={newEmailForm.email}
+                              onChange={(e) => setNewEmailForm({ ...newEmailForm, email: e.target.value })}
+                              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder-white/40"
+                            />
+                            <select
+                              value={newEmailForm.provider}
+                              onChange={(e) => setNewEmailForm({ ...newEmailForm, provider: e.target.value as any })}
+                              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white"
+                            >
+                              <option value="gmail">Gmail</option>
+                              <option value="outlook">Outlook</option>
+                              <option value="yahoo">Yahoo</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleAddEmail}
+                            disabled={!newEmailForm.email}
+                            className="w-full px-4 py-3 bg-gradient-primary text-white rounded-xl transition-all disabled:opacity-50"
+                          >
+                            Add Email Account
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-4 pt-6">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setCurrentStep(selectedMethods.includes('email_receipts') ? 'email-select' : 'methods')}
+                        className="flex-1 px-6 py-4 text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-300"
+                      >
+                        Back
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ 
+                          scale: selectedEmails.length > 0 ? 1.02 : 1, 
+                          boxShadow: selectedEmails.length > 0 ? "0 0 30px rgba(0, 255, 255, 0.3)" : "none"
+                        }}
+                        whileTap={{ scale: selectedEmails.length > 0 ? 0.98 : 1 }}
+                        onClick={handleStartDetection}
+                        disabled={selectedEmails.length === 0}
+                        className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all shadow-lg ${
+                          selectedEmails.length > 0
+                            ? 'bg-gradient-primary text-white hover:shadow-cyan-500/25 neon-glow'
+                            : 'bg-white/10 text-white/40 cursor-not-allowed'
+                        }`}
+                      >
+                        <Zap className="w-5 h-5" />
+                        Start Scanning {selectedEmails.length} Email{selectedEmails.length !== 1 ? 's' : ''}
                       </motion.button>
                     </div>
                   </motion.div>
