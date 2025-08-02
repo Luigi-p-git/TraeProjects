@@ -1,8 +1,49 @@
 # Version History & Git Management Guide
 
-## Current Version: v1.1-auto-detection
+## Current Version: v1.2-auth-system
 
-### v1.1-auto-detection (Latest Release)
+### v1.2-auth-system (Latest Release)
+**Release Date:** December 2024
+**Tag:** `v1.2-auth-system`
+
+#### 🔐 Authentication System
+- **Complete SSO Integration**: Google OAuth, email/password, and developer mode
+- **Multi-Authentication Options**: Flexible login methods for different use cases
+- **Developer Mode**: Quick access without credentials for testing
+- **Protected Routes**: Secure access to subscription data
+- **Session Management**: Persistent login state with secure logout
+
+#### 📧 Email Integration
+- **Multi-Email Support**: Connect and manage multiple email accounts
+- **Email Scanning**: Automatic subscription detection from email receipts
+- **Provider Support**: Gmail, Outlook, Yahoo, and other email providers
+- **Secure Processing**: Email data handled securely without storage
+- **Subscription Discovery**: AI-powered detection of subscription services
+
+#### 🎨 Enhanced UI/UX
+- **Animated Login Page**: Beautiful, responsive authentication interface
+- **User Dashboard**: Personalized header with user information
+- **Loading States**: Smooth transitions and feedback
+- **Error Handling**: Comprehensive error messages and recovery
+- **Responsive Design**: Mobile-friendly authentication flow
+
+#### 🛡️ Security Features
+- **Non-Deployed Testing**: Secure local development environment
+- **Data Protection**: No sensitive information stored permanently
+- **Token Management**: Secure handling of authentication tokens
+- **Privacy First**: Email scanning without data retention
+- **Logout Protection**: Complete session cleanup on logout
+
+#### 🔧 Technical Implementation
+- **AuthService Class**: Centralized authentication management
+- **State Management**: Reactive authentication state updates
+- **Local Storage**: Secure session persistence
+- **Error Boundaries**: Robust error handling throughout the app
+- **TypeScript Support**: Full type safety for authentication flow
+
+---
+
+### v1.1-auto-detection
 **Tag:** `v1.1-auto-detection`  
 **Date:** Latest Release  
 **Status:** Latest with Auto-Detection
