@@ -1,10 +1,39 @@
 # Version History & Git Management Guide
 
-## Current Stable Version: v1.0-stable
+## Current Version: v1.1-auto-detection
+
+### v1.1-auto-detection (Latest Release)
+**Tag:** `v1.1-auto-detection`  
+**Date:** Latest Release  
+**Status:** Latest with Auto-Detection
+
+#### 🚀 New Features
+- **Automatic Subscription Detection**: Revolutionary feature to automatically discover subscriptions
+- **Multi-Source Integration**: Support for bank transactions and email receipt scanning
+- **Security-First Design**: No sensitive payment data handling, bank-level security
+- **Smart Confidence Scoring**: AI-powered detection with confidence ratings
+- **Batch Import**: Add multiple detected subscriptions at once
+- **Real API Foundation**: Ready for Plaid, Yodlee, and email parsing API integration
+
+#### 🎨 UI/UX Improvements
+- **Auto-Detect Button**: Purple gradient button with Bot icon
+- **Multi-Step Modal**: Animated detection flow with progress indicators
+- **Connection Status**: Real-time feedback on bank/email connections
+- **Detection Results**: Interactive selection of found subscriptions
+- **Loading States**: Smooth animations during detection process
+
+#### 📋 Technical Implementation
+- `AutoDetectionService.ts`: Mock service with real API structure
+- `AutoDetectionModal.tsx`: Complete detection UI workflow
+- `AUTOMATIC_SUBSCRIPTION_DETECTION.md`: Comprehensive implementation plan
+- Enhanced main page with multiple subscription support
+
+---
 
 ### v1.0-stable (December 2024)
 **Tag:** `v1.0-stable`  
 **Commit:** `8a229a4`
+**Status:** Stable Production Version
 
 **Features:**
 - ✅ Persistent data storage using localStorage
