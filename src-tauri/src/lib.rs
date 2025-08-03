@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
-use std::env;
-use reqwest::Client;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct TranscriptionResult {
@@ -15,25 +13,7 @@ struct TranscriptionError {
     message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct TranslationResult {
-    translated_text: String,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-struct TranslationError {
-    message: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct DeepLResponse {
-    translations: Vec<DeepLTranslation>,
-}
-
-#[derive(Debug, Deserialize)]
-struct DeepLTranslation {
-    text: String,
-}
 
 // Global state to track if transcription is active
 static TRANSCRIPTION_ACTIVE: Mutex<bool> = Mutex::new(false);
@@ -44,81 +24,7 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-#[tauri::command]
-async fn translate(text: String, target_lang: String, source_lang: Option<String>) -> Result<TranslationResult, TranslationError> {
-    // Load API key from environment
-    let api_key = env::var("DEEPL_API_KEY")
-        .map_err(|_| TranslationError {
-            message: "DeepL API key not found in environment.".to_string(),
-        })?;
 
-    if api_key.is_empty() || api_key == "your_deepl_api_key_here" {
-        return Err(TranslationError {
-            message: "API key is empty or is a placeholder. Please check your .env file.".to_string(),
-        });
-    }
-
-    // Create HTTP client
-    let client = Client::new();
-    
-    // Prepare request body
-    let mut params = vec![
-        ("text", text.as_str()),
-        ("target_lang", target_lang.as_str()),
-    ];
-    
-    if let Some(ref source) = source_lang {
-        params.push(("source_lang", source.as_str()));
-    }
-
-    // Make request to DeepL API
-    let response = client
-        .post("https://api-free.deepl.com/v2/translate")
-        .header("Authorization", format!("DeepL-Auth-Key {}", api_key))
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&params)
-        .send()
-        .await
-        .map_err(|e| TranslationError {
-            message: format!("Failed to connect to DeepL API: {}", e),
-        })?;
-
-    // THIS IS THE NEW, IMPROVED ERROR HANDLING BLOCK
-    if !response.status().is_success() {
-        let status = response.status();
-        // Get the full error body from DeepL's response
-        let error_body = response.text().await.unwrap_or_else(|_| "Could not retrieve error body.".to_string());
-        // Create the detailed error message
-        let detailed_error_message = format!("DeepL API Error (Status: {}): {}", status, error_body);
-
-        // THIS IS THE NEW DEBUG LINE FOR YOUR TERMINAL
-        println!("TRANSLATION DEBUG: {}", detailed_error_message);
-
-        // Return the detailed error to the frontend
-        return Err(TranslationError {
-            message: detailed_error_message,
-        });
-    }
-
-    // Parse successful response
-    let deepl_response: DeepLResponse = response
-        .json()
-        .await
-        .map_err(|e| TranslationError {
-            message: format!("Failed to parse DeepL response: {}", e),
-        })?;
-
-    // Extract translated text
-    let translated_text = deepl_response
-        .translations
-        .first()
-        .map(|t| t.text.clone())
-        .ok_or_else(|| TranslationError {
-            message: "No translation found in DeepL response.".to_string(),
-        })?;
-
-    Ok(TranslationResult { translated_text })
-}
 
 #[cfg(target_os = "macos")]
 fn check_microphone_permission() -> Result<(), String> {
@@ -362,16 +268,12 @@ async fn start_macos_speech_recognition(app_handle: AppHandle, language: String)
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Load environment variables
-    dotenv::dotenv().ok();
-    
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             start_transcription,
             stop_transcription,
-            translate,
             speak,
             stop_speech
         ])

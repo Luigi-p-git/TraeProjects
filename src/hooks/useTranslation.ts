@@ -16,11 +16,17 @@ interface TranslationHook {
   setTranslatedText: (text: string) => void;
 }
 
-// Check if we're running in Tauri environment
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+// Interface for translation request
+interface TranslationRequest {
+  text: string;
+  targetLang: string;
+  sourceLang?: string;
+}
 
-// Type for Tauri invoke function
-type InvokeFunction = (command: string, args?: any) => Promise<any>;
+// Interface for translation error
+interface TranslationError {
+  message: string;
+}
 
 export const useTranslation = (): TranslationHook => {
   const [translatedText, setTranslatedText] = useState('');
@@ -34,38 +40,45 @@ export const useTranslation = (): TranslationHook => {
 
     setTranslationStatus('translating');
     setTranslatedText('');
+    setErrorMessage('');
 
-    if (isTauri) {
-      try {
-        // Dynamic import for Tauri API
-        const { invoke } = await import('@tauri-apps/api/core');
-        
-        const result: TranslationResult = await (invoke as InvokeFunction)('translate', {
-          text,
-          target_lang: targetLang,
-          source_lang: sourceLang
-        });
-        
-        setTranslatedText(result.translated_text);
-        setTranslationStatus('success');
-      } catch (error: any) {
-        console.error('Translation error:', error);
-        setTranslationStatus('error');
-        
-        // Handle different error types and capture error message
-        if (error && typeof error === 'object' && 'message' in error) {
-          console.error('Translation failed:', error.message);
-          setErrorMessage(error.message);
-        } else {
-          console.error('Translation failed with unknown error');
-          setErrorMessage('Translation failed with unknown error');
-        }
+    try {
+      // Prepare request body
+      const requestBody: TranslationRequest = {
+        text,
+        targetLang,
+        ...(sourceLang && { sourceLang })
+      };
+
+      // Make request to serverless function
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData: TranslationError = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
-    } else {
-      // Fallback for web environment
+
+      const result: TranslationResult = await response.json();
+      setTranslatedText(result.translated_text);
+      setTranslationStatus('success');
+    } catch (error: any) {
+      console.error('Translation error:', error);
       setTranslationStatus('error');
-      setErrorMessage('Translation is only available in the desktop application');
-      console.error('Translation is only available in the desktop application');
+      
+      // Handle different error types and capture error message
+      if (error && typeof error === 'object' && 'message' in error) {
+        console.error('Translation failed:', error.message);
+        setErrorMessage(error.message);
+      } else {
+        console.error('Translation failed with unknown error');
+        setErrorMessage('Translation failed with unknown error');
+      }
     }
   }, []);
 
