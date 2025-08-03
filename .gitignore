@@ -17,6 +17,12 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Dependencies
+node_modules/
+
+# Tauri build artifacts
+src-tauri/target/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
