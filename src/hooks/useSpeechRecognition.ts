@@ -10,6 +10,9 @@ interface SpeechRecognitionHook {
   startListening: (language?: string) => void;
   stopListening: () => void;
   clearTranscription: () => void;
+  isPushToTalkActive: boolean;
+  enablePushToTalk: () => void;
+  disablePushToTalk: () => void;
 }
 
 // Tauri types
@@ -78,6 +81,8 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
   const [transcribedText, setTranscribedText] = useState('');
   const [status, setStatus] = useState<SpeechStatus>('Ready');
   const [currentLanguage, setCurrentLanguage] = useState('en-US');
+  const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
 
   // Tauri API references
   const [invoke, setInvoke] = useState<InvokeFunction | null>(null);
@@ -337,12 +342,68 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
     setTranscribedText('');
   }, []);
 
+  // Push-to-talk functionality
+  const enablePushToTalk = useCallback(() => {
+    setIsPushToTalkActive(true);
+  }, []);
+
+  const disablePushToTalk = useCallback(() => {
+    setIsPushToTalkActive(false);
+    if (isListening) {
+      stopListening();
+    }
+  }, [isListening, stopListening]);
+
+  // Global keyboard event handlers for push-to-talk
+  useEffect(() => {
+    if (!isPushToTalkActive) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger if spacebar is pressed and not already pressed
+      // Also check that we're not in an input field
+      if (event.code === 'Space' && 
+          !isSpacePressed && 
+          !isListening &&
+          event.target instanceof Element &&
+          !['INPUT', 'TEXTAREA'].includes(event.target.tagName) &&
+          !event.target.hasAttribute('contenteditable')) {
+        
+        event.preventDefault();
+        setIsSpacePressed(true);
+        startListening(currentLanguage);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space' && isSpacePressed) {
+        event.preventDefault();
+        setIsSpacePressed(false);
+        if (isListening) {
+          stopListening();
+        }
+      }
+    };
+
+    // Add global event listeners
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isPushToTalkActive, isSpacePressed, isListening, currentLanguage, startListening, stopListening]);
+
   return {
     isListening,
     transcribedText,
     status,
     startListening,
     stopListening,
-    clearTranscription
+    clearTranscription,
+    isPushToTalkActive,
+    enablePushToTalk,
+    disablePushToTalk
   };
 };

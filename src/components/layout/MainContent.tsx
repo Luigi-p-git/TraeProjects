@@ -27,7 +27,7 @@ type AppMode = 'speech-to-text' | 'text-to-speech';
 
 export const MainContent = forwardRef<any, MainContentProps>(({ className, onHistoryLoad, activeHistoryId, historyHook }, ref) => {
   const [transcriptionLanguage, setTranscriptionLanguage] = useState<string>("en-US");
-  const [targetLanguage, setTargetLanguage] = useState<string>("EN");
+  const [targetLanguage, setTargetLanguage] = useState<string>("ES"); // Default to Spanish for auto-translation
   const [appMode, setAppMode] = useState<AppMode>('speech-to-text');
   const [showSettings, setShowSettings] = useState(false);
   const [textInput, setTextInput] = useState<string>(''); // For text-to-speech mode
@@ -42,7 +42,10 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
     status,
     startListening,
     stopListening,
-    clearTranscription
+    clearTranscription,
+    isPushToTalkActive,
+    enablePushToTalk,
+    disablePushToTalk
   } = useSpeechRecognition();
 
   const {
@@ -63,12 +66,24 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
     downloadAudio
   } = useTTS();
 
-  // Debug: Track transcribedText changes
+  // Automatic Translation: Trigger translation when transcription is finalized
   useEffect(() => {
-    console.log('MAIN DEBUG: transcribedText changed to:', transcribedText);
-    console.log('MAIN DEBUG: transcribedText length:', transcribedText?.length);
-    console.log('MAIN DEBUG: transcribedText trimmed:', transcribedText?.trim());
-  }, [transcribedText]);
+    // Only auto-translate in speech-to-text mode and when we have transcribed text
+    if (appMode === 'speech-to-text' && 
+        transcribedText && 
+        transcribedText.trim() && 
+        !isListening && // Only when not actively listening (transcription is final)
+        translationStatus === 'idle') { // Avoid re-triggering during translation
+      
+      const sourceLanguage = getDeepLSourceCode(transcriptionLanguage);
+      
+      // Only auto-translate if source and target languages are different
+      if (sourceLanguage !== targetLanguage) {
+        console.log('AUTO-TRANSLATE: Triggering automatic translation from', sourceLanguage, 'to', targetLanguage);
+        translateText(transcribedText, targetLanguage, sourceLanguage);
+      }
+    }
+  }, [transcribedText, isListening, appMode, transcriptionLanguage, targetLanguage, translationStatus, translateText]);
 
   const toggleTranscription = () => {
     if (isListening) {
@@ -341,7 +356,7 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1, repeat: Infinity }}
                             />
-                            Listening...
+                            {isPushToTalkActive ? "Recording (Hold SPACEBAR)" : "Listening..."}
                           </motion.div>
                         )}
                         {status === 'Error' && (
@@ -360,14 +375,17 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                       {/* Record Button */}
                       <motion.button
                         onClick={toggleTranscription}
+                        disabled={isPushToTalkActive}
                         className={cn(
                           "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all shadow-lg",
-                          isListening
+                          isPushToTalkActive
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                            : isListening
                             ? "bg-red-500 text-white hover:bg-red-600"
                             : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
                         )}
-                        whileHover={{ scale: isListening ? 1 : 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: isListening || isPushToTalkActive ? 1 : 1.05 }}
+                        whileTap={{ scale: isPushToTalkActive ? 1 : 0.95 }}
                         animate={isListening ? {
                           boxShadow: [
                             "0 0 0 0 rgba(239, 68, 68, 0.7)",
@@ -390,10 +408,87 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                         ) : (
                           <>
                             <Mic className="w-5 h-5" />
-                            Start Recording
+                            {isPushToTalkActive ? "Push-to-Talk Active" : "Start Recording"}
                           </>
                         )}
                       </motion.button>
+                      
+                      {/* Push-to-Talk Toggle - Elegant Minimal Design */}
+                       <motion.button
+                         onClick={isPushToTalkActive ? disablePushToTalk : enablePushToTalk}
+                         className={`group relative flex items-center gap-2.5 px-4 py-2 rounded-xl transition-all duration-300 ${
+                           isPushToTalkActive 
+                             ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300' 
+                             : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                         }`}
+                         whileHover={{ scale: 1.01 }}
+                         whileTap={{ scale: 0.99 }}
+                       >
+                         <motion.div
+                           className={`w-2 h-2 rounded-full ${
+                             isPushToTalkActive ? 'bg-blue-500' : 'bg-gray-400'
+                           }`}
+                           animate={{
+                             scale: isPushToTalkActive ? [1, 1.2, 1] : 1,
+                             opacity: isPushToTalkActive ? [0.7, 1, 0.7] : 1
+                           }}
+                           transition={{
+                             duration: 1.5,
+                             repeat: isPushToTalkActive ? Infinity : 0,
+                             ease: "easeInOut"
+                           }}
+                         />
+                         <span className="text-sm font-medium">
+                           Push-to-Talk
+                         </span>
+                         <motion.div
+                           className={`text-xs px-1.5 py-0.5 rounded-md ${
+                             isPushToTalkActive 
+                               ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
+                               : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                           }`}
+                           animate={{
+                             opacity: isPushToTalkActive ? [0.8, 1, 0.8] : 1
+                           }}
+                           transition={{
+                             duration: 2,
+                             repeat: isPushToTalkActive ? Infinity : 0,
+                             ease: "easeInOut"
+                           }}
+                         >
+                           {isPushToTalkActive ? 'ON' : 'OFF'}
+                         </motion.div>
+                       </motion.button>
+                      
+                      {/* Push-to-Talk Instructions - Clean Minimal Design */}
+                       <AnimatePresence>
+                         {isPushToTalkActive && (
+                           <motion.div
+                             initial={{ opacity: 0, y: 8 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             exit={{ opacity: 0, y: -8 }}
+                             transition={{ duration: 0.2, ease: "easeOut" }}
+                             className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                           >
+                             <motion.div
+                               className="w-1.5 h-1.5 bg-red-500 rounded-full"
+                               animate={{
+                                 opacity: [0.4, 1, 0.4]
+                               }}
+                               transition={{
+                                 duration: 1.5,
+                                 repeat: Infinity,
+                                 ease: "easeInOut"
+                               }}
+                             />
+                             <span className="font-medium">Hold</span>
+                             <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-xs font-mono font-semibold text-gray-700 dark:text-gray-300">
+                               SPACE
+                             </kbd>
+                             <span>to record</span>
+                           </motion.div>
+                         )}
+                       </AnimatePresence>
                       
                       {/* Play Button */}
                       <motion.button
@@ -746,7 +841,7 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                       {translationStatus === 'translating' ? (
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin"></div>
-                          <span>Translating...</span>
+                          <span>Auto-translating...</span>
                         </div>
                       ) : (
                         'Translate'
