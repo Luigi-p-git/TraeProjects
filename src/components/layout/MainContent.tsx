@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings, Save, Download } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import VoicePalLogo from "@/assets/voicepal-logo.svg";
 
 interface MainContentProps {
   className?: string;
@@ -241,14 +242,21 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <motion.h2 
-                className="text-2xl font-bold text-foreground"
+              <motion.div 
+                className="flex items-center gap-3"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                🎤 VoicePal
-              </motion.h2>
+                <img 
+                  src={VoicePalLogo} 
+                  alt="VoicePal Logo" 
+                  className="w-8 h-8"
+                />
+                <h2 className="text-2xl font-bold text-foreground">
+                  VoicePal
+                </h2>
+              </motion.div>
               <motion.p 
                 className="text-sm text-muted-foreground mt-1"
                 initial={{ opacity: 0 }}

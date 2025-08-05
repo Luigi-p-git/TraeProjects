@@ -3,6 +3,7 @@ import { useHistory, HistoryItem } from "@/hooks/useHistory";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Clock, Languages, Archive } from "lucide-react";
 import { useState } from "react";
+import VoicePalLogo from "@/assets/voicepal-logo.svg";
 
 interface SidebarProps {
   className?: string;
@@ -76,7 +77,14 @@ export function Sidebar({ className, onHistoryLoad, onResetSession, activeHistor
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <h2 className="text-lg font-semibold text-foreground">VoicePal</h2>
+          <div className="flex items-center gap-3">
+            <img 
+               src={VoicePalLogo} 
+               alt="VoicePal Logo" 
+               className="w-6 h-6"
+             />
+            <h2 className="text-lg font-semibold text-foreground">VoicePal</h2>
+          </div>
           <p className="text-sm text-muted-foreground">
             AI-powered speech processing
           </p>
