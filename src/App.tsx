@@ -1,26 +1,53 @@
-import { Sidebar } from "./components/layout/Sidebar";
-import { MainContent } from "./components/layout/MainContent";
-
-// This tells TypeScript that the `window` object might have a `__TAURI__` property.
-declare global {
-  interface Window {
-    __TAURI__?: object;
-  }
-}
+import { MainContent } from "@/components/layout/MainContent";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { HistoryItem, useHistory } from "@/hooks/useHistory";
+import { cn } from "@/lib/utils";
+import { useState, useRef } from "react";
 
 function App() {
-  // This line checks if the app is running in the Tauri desktop environment.
-  const isTauri = window.__TAURI__ !== undefined;
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+  const mainContentRef = useRef<any>(null);
+  
+  // Lift history state up to App level
+  const historyHook = useHistory();
+
+  const handleHistoryLoad = (item: HistoryItem | null) => {
+    if (item) {
+      setActiveHistoryId(item.id);
+      // Aquí podrías emitir un evento personalizado o usar una ref para comunicarte con MainContent
+      // Por ahora, MainContent manejará la carga a través de props
+      if (mainContentRef.current) {
+        mainContentRef.current.loadHistoryItem(item);
+      }
+    } else {
+      setActiveHistoryId(null);
+    }
+  };
+
+  const handleResetSession = () => {
+    setActiveHistoryId(null);
+    if (mainContentRef.current) {
+      mainContentRef.current.resetSession();
+    }
+  };
 
   return (
-    <div className="h-screen bg-background flex">
-      {/* Main app layout */}
-      <Sidebar />
-      <MainContent />
-
-      {/* Debug Label */}
-      <div className="fixed bottom-2 left-2 z-50 rounded-md border bg-muted px-2 py-1 text-xs text-muted-foreground">
-        Environment: {isTauri ? 'Desktop (Tauri)' : 'Web Browser'}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="flex h-screen">
+        <Sidebar 
+          className="w-64 border-r border-border/50" 
+          onHistoryLoad={handleHistoryLoad}
+          onResetSession={handleResetSession}
+          activeHistoryId={activeHistoryId}
+          historyHook={historyHook}
+        />
+        <MainContent 
+          ref={mainContentRef}
+          className="flex-1" 
+          onHistoryLoad={handleHistoryLoad}
+          activeHistoryId={activeHistoryId}
+          historyHook={historyHook}
+        />
       </div>
     </div>
   );

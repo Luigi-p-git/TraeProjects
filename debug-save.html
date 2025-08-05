@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Save Functionality</title>
+</head>
+<body>
+    <h1>Manual Debug Test for Save Functionality</h1>
+    <p>Open the browser console and follow these steps:</p>
+    <ol>
+        <li>Go to <a href="http://localhost:1420" target="_blank">http://localhost:1420</a></li>
+        <li>Open browser console (F12)</li>
+        <li>Click the microphone button to start recording</li>
+        <li>Wait for "Hello world" text to appear</li>
+        <li>Click the Save button</li>
+        <li>Check console for debug messages</li>
+        <li>Check if history item appears in sidebar</li>
+    </ol>
+    
+    <h2>Expected Debug Messages:</h2>
+    <ul>
+        <li>SPEECH DEBUG: Starting listening...</li>
+        <li>TESTING: Injecting dummy text for testing</li>
+        <li>DEBUG: Save button clicked.</li>
+        <li>SAVE DEBUG: appMode: speech-to-text</li>
+        <li>SAVE DEBUG: transcribedText (raw): Hello world</li>
+        <li>SAVE DEBUG: textToSave (final): Hello world</li>
+        <li>HISTORY DEBUG: Saving item to history</li>
+        <li>HISTORY DEBUG: Item saved successfully</li>
+        <li>DEBUG: Sidebar is rendering with history: [...]</li>
+    </ul>
+    
+    <h2>If Save is not working:</h2>
+    <p>Look for error messages or missing debug logs to identify where the process fails.</p>
+</body>
+</html>

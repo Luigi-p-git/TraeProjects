@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTTS } from "@/hooks/useTTS";
+import { useHistory } from "@/hooks/useHistory";
 import {
   Select,
   SelectContent,
@@ -9,22 +10,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings } from "lucide-react";
+import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings, Save } from "lucide-react";
 
 interface MainContentProps {
   className?: string;
+  onHistoryLoad?: (item: any) => void;
+  activeHistoryId?: string | null;
+  historyHook?: ReturnType<typeof useHistory>;
 }
 
 type AppMode = 'speech-to-text' | 'text-to-speech';
 
-export function MainContent({ className }: MainContentProps) {
+export const MainContent = forwardRef<any, MainContentProps>(({ className, onHistoryLoad, activeHistoryId, historyHook }, ref) => {
   const [transcriptionLanguage, setTranscriptionLanguage] = useState<string>("en-US");
   const [targetLanguage, setTargetLanguage] = useState<string>("EN");
   const [appMode, setAppMode] = useState<AppMode>('speech-to-text');
   const [showSettings, setShowSettings] = useState(false);
+  const [textInput, setTextInput] = useState<string>(''); // For text-to-speech mode
+  
+  // Use shared history hook or fallback to local one
+  const localHistoryHook = useHistory();
+  const { addHistoryItem } = historyHook || localHistoryHook;
   
   const {
     isListening,
@@ -51,6 +60,13 @@ export function MainContent({ className }: MainContentProps) {
     stopSpeech
   } = useTTS();
 
+  // Debug: Track transcribedText changes
+  useEffect(() => {
+    console.log('MAIN DEBUG: transcribedText changed to:', transcribedText);
+    console.log('MAIN DEBUG: transcribedText length:', transcribedText?.length);
+    console.log('MAIN DEBUG: transcribedText trimmed:', transcribedText?.trim());
+  }, [transcribedText]);
+
   const toggleTranscription = () => {
     if (isListening) {
       stopListening();
@@ -70,17 +86,18 @@ export function MainContent({ className }: MainContentProps) {
   };
 
   const handleTranslate = () => {
-    if (transcribedText.trim()) {
+    const textToTranslate = appMode === 'text-to-speech' ? textInput : transcribedText;
+    if (textToTranslate && textToTranslate.trim()) {
       const sourceLanguage = getDeepLSourceCode(transcriptionLanguage);
       
       // Check if source and target are the same
       if (sourceLanguage === targetLanguage) {
-        // Copy transcribed text to translated text without API call
-        setTranslatedText(transcribedText);
+        // Copy text to translated text without API call
+        setTranslatedText(textToTranslate);
         return;
       }
       
-      translateText(transcribedText, targetLanguage, sourceLanguage);
+      translateText(textToTranslate, targetLanguage, sourceLanguage);
     }
   };
 
@@ -88,18 +105,90 @@ export function MainContent({ className }: MainContentProps) {
     if (isPlaying) {
       await stopSpeech();
     } else {
+      const textToPlay = appMode === 'text-to-speech' ? textInput : transcribedText;
       if (translatedText.trim()) {
         // Play translated text with target language
         const langCode = targetLanguage === 'EN' ? 'en-US' : 
                         targetLanguage === 'ES' ? 'es-ES' : 
                         targetLanguage === 'FR' ? 'fr-FR' : 'en-US';
         await speak(translatedText, langCode);
-      } else if (transcribedText.trim()) {
-        // Play transcribed text with source language
-        await speak(transcribedText, transcriptionLanguage);
+      } else if (textToPlay && textToPlay.trim()) {
+        // Play text with source language
+        await speak(textToPlay, transcriptionLanguage);
       }
     }
   };
+  
+  const handleSaveToHistory = () => {
+    console.log('DEBUG: Save button clicked.');
+    console.log('SAVE DEBUG: appMode:', appMode);
+    console.log('SAVE DEBUG: transcribedText (raw):', transcribedText);
+    console.log('SAVE DEBUG: textInput:', textInput);
+    const textToSave = appMode === 'text-to-speech' ? textInput : transcribedText;
+    console.log('SAVE DEBUG: textToSave (final):', textToSave);
+    console.log('SAVE DEBUG: textToSave.trim():', textToSave?.trim());
+    console.log('SAVE DEBUG: Boolean check (!textToSave || !textToSave.trim()):', !textToSave || !textToSave.trim());
+    console.log('translatedText:', translatedText);
+    
+    if (textToSave && textToSave.trim()) {
+      try {
+        const historyItemObject = {
+          transcribedText: textToSave.trim(),
+          translatedText: translatedText || '',
+          targetLang: targetLanguage,
+          sourceLang: transcriptionLanguage,
+          ttsVoice: selectedVoice,
+        };
+        console.log('DEBUG: Attempting to save this object:', historyItemObject);
+        const savedItem = addHistoryItem(historyItemObject);
+        console.log('Item saved successfully:', savedItem);
+      } catch (error) {
+        console.error('Error saving to history:', error);
+      }
+    } else {
+      console.log('Cannot save: text is empty or undefined');
+    }
+  };
+  
+  // Función para resetear la sesión activa
+  const resetActiveSession = () => {
+    clearTranscription();
+    setTargetLanguage('EN');
+    setTranscriptionLanguage('en-US');
+    setSelectedVoice('normal');
+    if (onHistoryLoad) {
+      onHistoryLoad(null);
+    }
+  };
+  
+  // Exponer funciones al componente padre
+  useImperativeHandle(ref, () => ({
+    loadHistoryItem: (item: any) => {
+      // Cargar datos del item del historial
+      if (item.transcribedText) {
+        // Establecer las configuraciones del item
+        setSelectedVoice(item.ttsVoice || 'normal');
+        setTranscriptionLanguage(item.sourceLang || 'en-US');
+        setTargetLanguage(item.targetLang || 'EN');
+        
+        // Si hay traducción, también la establecemos
+        if (item.translatedText) {
+          setTranslatedText(item.translatedText);
+        }
+        
+        // Nota: El texto transcrito se mostraría en la UI pero no podemos modificarlo
+        // directamente desde aquí ya que es manejado por el hook useSpeechRecognition
+      }
+    },
+    resetSession: () => {
+      resetActiveSession();
+    }
+  }));
+  
+  // Efecto para cargar datos del historial cuando se selecciona un item
+  useEffect(() => {
+    // Este efecto se manejará desde el componente padre (App.tsx)
+  }, [activeHistoryId]);
 
   const getLanguageDisplayName = (langCode: string) => {
     switch (langCode) {
@@ -371,22 +460,22 @@ export function MainContent({ className }: MainContentProps) {
                       <textarea
                         placeholder="Enter text to convert to speech..."
                         className="w-full h-48 p-4 bg-background/50 border border-border/50 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground"
-                        value={transcribedText}
+                        value={textInput}
                         onChange={(e) => {
-                          // You can add a state for text input here
+                          setTextInput(e.target.value);
                         }}
                       />
                       
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          {transcribedText?.length || 0} characters
+                          {textInput?.length || 0} characters
                         </div>
                         <motion.button
                           onClick={handlePlayText}
-                          disabled={!transcribedText || isPlaying}
+                          disabled={!textInput || isPlaying}
                           className={cn(
                             "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all",
-                            !transcribedText || isPlaying
+                            !textInput || isPlaying
                               ? "bg-muted text-muted-foreground cursor-not-allowed"
                               : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 shadow-lg"
                           )}
@@ -444,6 +533,7 @@ export function MainContent({ className }: MainContentProps) {
                     <motion.button
                       onClick={toggleTranscription}
                       disabled={status === 'Error'}
+                      data-testid="mic-button"
                       className={cn(
                         "flex items-center gap-3 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg",
                         isListening
@@ -485,20 +575,32 @@ export function MainContent({ className }: MainContentProps) {
                       Clear
                     </motion.button>
                     
-                    {/* Export Button */}
-                    <motion.button
-                      disabled={!transcribedText}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                        !transcribedText
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-accent/80 hover:bg-accent text-accent-foreground hover:scale-105"
-                      )}
-                      whileHover={transcribedText ? { scale: 1.05 } : {}}
-                      whileTap={transcribedText ? { scale: 0.95 } : {}}
-                    >
-                      Export
-                    </motion.button>
+                    {/* Save Button */}
+                    {(() => {
+                      const isTextToSpeech = appMode as string === 'text-to-speech';
+                      const currentText = isTextToSpeech ? textInput : transcribedText;
+                      const isDisabled = !currentText || !currentText.trim();
+                      const hasValidText = currentText && currentText.trim();
+                      
+                      return (
+                        <motion.button
+                          onClick={handleSaveToHistory}
+                          disabled={isDisabled}
+                          data-testid="save-button"
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                            isDisabled
+                              ? "bg-muted text-muted-foreground cursor-not-allowed"
+                              : "bg-green-500/80 hover:bg-green-500 text-white hover:scale-105"
+                          )}
+                          whileHover={hasValidText ? { scale: 1.05 } : {}}
+                          whileTap={hasValidText ? { scale: 0.95 } : {}}
+                        >
+                          <Save className="w-4 h-4" />
+                          Save
+                        </motion.button>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -711,4 +813,4 @@ export function MainContent({ className }: MainContentProps) {
       </div>
     </div>
   );
-}
+});
