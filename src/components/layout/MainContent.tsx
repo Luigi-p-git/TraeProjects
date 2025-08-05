@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useTTS } from "@/hooks/useTTS";
+import { useTTS, ELEVENLABS_VOICES } from "@/hooks/useTTS";
 import { useHistory } from "@/hooks/useHistory";
 import {
   Select,
@@ -13,7 +13,7 @@ import {
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings, Save } from "lucide-react";
+import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings, Save, Download } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface MainContentProps {
@@ -55,10 +55,12 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
 
   const {
     isPlaying,
+    status: ttsStatus,
     selectedVoice,
     setSelectedVoice,
     speak,
-    stopSpeech
+    stopSpeech,
+    downloadAudio
   } = useTTS();
 
   // Debug: Track transcribedText changes
@@ -119,6 +121,20 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
       }
     }
   };
+
+  const handleDownloadAudio = async () => {
+    try {
+      const textToDownload = appMode === 'text-to-speech' ? textInput : transcribedText;
+      if (translatedText.trim()) {
+        await downloadAudio(translatedText);
+      } else if (textToDownload && textToDownload.trim()) {
+        await downloadAudio(textToDownload);
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      // You could add a toast notification here
+    }
+  };
   
   const handleSaveToHistory = () => {
     console.log('DEBUG: Save button clicked.');
@@ -156,7 +172,7 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
     clearTranscription();
     setTargetLanguage('EN');
     setTranscriptionLanguage('en-US');
-    setSelectedVoice('normal');
+    setSelectedVoice('deep-male-narrator');
     if (onHistoryLoad) {
       onHistoryLoad(null);
     }
@@ -341,6 +357,44 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                         )}
                       </AnimatePresence>
                       
+                      {/* Record Button */}
+                      <motion.button
+                        onClick={toggleTranscription}
+                        className={cn(
+                          "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all shadow-lg",
+                          isListening
+                            ? "bg-red-500 text-white hover:bg-red-600"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                        )}
+                        whileHover={{ scale: isListening ? 1 : 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        animate={isListening ? {
+                          boxShadow: [
+                            "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                            "0 0 0 10px rgba(239, 68, 68, 0)",
+                            "0 0 0 0 rgba(239, 68, 68, 0)"
+                          ]
+                        } : {}}
+                        transition={{
+                          boxShadow: {
+                            duration: 1.5,
+                            repeat: Infinity
+                          }
+                        }}
+                      >
+                        {isListening ? (
+                          <>
+                            <MicOff className="w-5 h-5" />
+                            Stop Recording
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="w-5 h-5" />
+                            Start Recording
+                          </>
+                        )}
+                      </motion.button>
+                      
                       {/* Play Button */}
                       <motion.button
                         onClick={handlePlayText}
@@ -367,6 +421,23 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                             Play Audio
                           </>
                         )}
+                      </motion.button>
+                      
+                      {/* Save Button */}
+                      <motion.button
+                        onClick={handleSaveToHistory}
+                        disabled={!transcribedText.trim()}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                          !transcribedText.trim()
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                            : "bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:scale-105"
+                        )}
+                        whileHover={transcribedText.trim() ? { scale: 1.05 } : {}}
+                        whileTap={transcribedText.trim() ? { scale: 0.95 } : {}}
+                      >
+                        <Save className="w-4 h-4" />
+                        Save Speech
                       </motion.button>
                     </div>
                   </div>
@@ -450,9 +521,18 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                 <div className="h-full bg-card border border-border rounded-lg p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                      <Volume2 className="w-5 h-5" />
-                      Text to Speech
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Volume2 className="w-5 h-5" />
+                        Voice Controls
+                      </motion.div>
                     </h3>
+                    
+                    {/* Remove duplicate controls from header - keep only in text area */}
                   </div>
                   
                   <motion.div 
@@ -471,33 +551,88 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                       />
                       
                       <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
-                          {textInput?.length || 0} characters
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-muted-foreground">
+                            {textInput?.length || 0} characters
+                          </div>
+                          
+                          {/* Voice Selector for Text-to-Speech */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Voice:</span>
+                            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                              <SelectTrigger className="w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(ELEVENLABS_VOICES).map(([key, voice]) => (
+                                  <SelectItem key={key} value={key}>
+                                    {voice.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <motion.button
-                          onClick={handlePlayText}
-                          disabled={!textInput || isPlaying}
-                          className={cn(
-                            "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all",
-                            !textInput || isPlaying
-                              ? "bg-muted text-muted-foreground cursor-not-allowed"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 shadow-lg"
-                          )}
-                          whileHover={transcribedText && !isPlaying ? { scale: 1.05 } : {}}
-                          whileTap={transcribedText && !isPlaying ? { scale: 0.95 } : {}}
-                        >
-                          {isPlaying ? (
-                            <>
-                              <Square className="w-4 h-4" />
-                              Stop
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4" />
-                              Generate Speech
-                            </>
-                          )}
-                        </motion.button>
+                        <div className="flex items-center gap-3">
+                          <motion.button
+                            onClick={handlePlayText}
+                            disabled={!textInput || isPlaying}
+                            className={cn(
+                              "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all shadow-lg",
+                              !textInput || isPlaying
+                                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                            )}
+                            whileHover={textInput && !isPlaying ? { scale: 1.05 } : {}}
+                            whileTap={textInput && !isPlaying ? { scale: 0.95 } : {}}
+                          >
+                            {isPlaying ? (
+                              <>
+                                <Square className="w-4 h-4" />
+                                Stop
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-4 h-4" />
+                                Generate Speech
+                              </>
+                            )}
+                          </motion.button>
+                          
+                          {/* Download Button */}
+                          <motion.button
+                            onClick={handleDownloadAudio}
+                            disabled={!textInput.trim() || ttsStatus === 'generating'}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                              !textInput.trim() || ttsStatus === 'generating'
+                                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                : "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 hover:scale-105"
+                            )}
+                            whileHover={textInput.trim() && ttsStatus !== 'generating' ? { scale: 1.05 } : {}}
+                            whileTap={textInput.trim() && ttsStatus !== 'generating' ? { scale: 0.95 } : {}}
+                          >
+                            <Download className="w-4 h-4" />
+                            {ttsStatus === 'generating' ? 'Generating...' : 'Download'}
+                          </motion.button>
+                          
+                          {/* Save Button */}
+                          <motion.button
+                            onClick={handleSaveToHistory}
+                            disabled={!textInput.trim()}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                              !textInput.trim()
+                                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                : "bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:scale-105"
+                            )}
+                            whileHover={textInput.trim() ? { scale: 1.05 } : {}}
+                            whileTap={textInput.trim() ? { scale: 0.95 } : {}}
+                          >
+                            <Save className="w-4 h-4" />
+                            Save Text
+                          </motion.button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -506,6 +641,8 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
             </motion.div>
           )}
         </AnimatePresence>
+
+
 
         {/* Action Bar */}
         <motion.div 
@@ -517,97 +654,31 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                {appMode === 'speech-to-text' ? (
-                  <>
-                    <Mic className="w-5 h-5" />
-                    Speech Controls
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-5 h-5" />
-                    Voice Controls
-                  </>
-                )}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={appMode}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-2"
+                  >
+                    {appMode === 'speech-to-text' ? (
+                      <>
+                        <Mic className="w-5 h-5" />
+                        Speech Controls
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-5 h-5" />
+                        Voice Controls
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </h3>
               
-              <div className="flex items-center gap-3">
-                {appMode === 'speech-to-text' && (
-                  <>
-                    {/* Record Button - Large Pill Shape */}
-                    <motion.button
-                      onClick={toggleTranscription}
-                      disabled={status === 'Error'}
-                      data-testid="mic-button"
-                      className={cn(
-                        "flex items-center gap-3 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg",
-                        isListening
-                          ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                          : "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground",
-                        status === 'Error' && "opacity-50 cursor-not-allowed"
-                      )}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      animate={isListening ? { scale: [1, 1.05, 1] } : {}}
-                      transition={isListening ? { duration: 1, repeat: Infinity } : { duration: 0.2 }}
-                    >
-                      {isListening ? (
-                        <>
-                          <MicOff className="w-6 h-6" />
-                          Stop Recording
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-6 h-6" />
-                          Start Recording
-                        </>
-                      )}
-                    </motion.button>
-                    
-                    {/* Clear Button */}
-                    <motion.button
-                      onClick={clearTranscription}
-                      disabled={!transcribedText}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                        !transcribedText
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-secondary/80 hover:bg-secondary text-secondary-foreground hover:scale-105"
-                      )}
-                      whileHover={transcribedText ? { scale: 1.05 } : {}}
-                      whileTap={transcribedText ? { scale: 0.95 } : {}}
-                    >
-                      Clear
-                    </motion.button>
-                    
-                    {/* Save Button */}
-                    {(() => {
-                      const isTextToSpeech = appMode as string === 'text-to-speech';
-                      const currentText = isTextToSpeech ? textInput : transcribedText;
-                      const isDisabled = !currentText || !currentText.trim();
-                      const hasValidText = currentText && currentText.trim();
-                      
-                      return (
-                        <motion.button
-                          onClick={handleSaveToHistory}
-                          disabled={isDisabled}
-                          data-testid="save-button"
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                            isDisabled
-                              ? "bg-muted text-muted-foreground cursor-not-allowed"
-                              : "bg-green-500/80 hover:bg-green-500 text-white hover:scale-105"
-                          )}
-                          whileHover={hasValidText ? { scale: 1.05 } : {}}
-                          whileTap={hasValidText ? { scale: 0.95 } : {}}
-                        >
-                          <Save className="w-4 h-4" />
-                          Save
-                        </motion.button>
-                      );
-                    })()}
-                  </>
-                )}
-              </div>
+              {/* Action bar controls removed - using only text area controls */}
             </div>
             
             {/* Settings Row */}
@@ -632,12 +703,15 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">Voice:</span>
                   <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="cinematic">Cinematic</SelectItem>
+                      {Object.entries(ELEVENLABS_VOICES).map(([key, voice]) => (
+                        <SelectItem key={key} value={key}>
+                          {voice.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
