@@ -50,8 +50,8 @@ export const useTranslation = (): TranslationHook => {
         ...(sourceLang && { sourceLang })
       };
 
-      // Make request to serverless function
-      const response = await fetch('/api/translate', {
+      // Make request to dev API server (temporary for development)
+      const response = await fetch('http://localhost:3001/api/translate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

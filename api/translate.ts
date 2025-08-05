@@ -24,6 +24,16 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -46,7 +56,14 @@ export default async function handler(
     }
 
     // Parse request body
-    const { text, targetLang, sourceLang }: TranslationRequest = req.body;
+    let body;
+    if (typeof req.body === 'string') {
+      body = JSON.parse(req.body);
+    } else {
+      body = req.body;
+    }
+    
+    const { text, targetLang, sourceLang }: TranslationRequest = body;
 
     if (!text || !targetLang) {
       return res.status(400).json({
@@ -54,14 +71,14 @@ export default async function handler(
       } as TranslationError);
     }
 
-    // Prepare request body for DeepL API
-    const params = new URLSearchParams({
-      text,
+    // Prepare request body for DeepL API (JSON format)
+    const requestBody: any = {
+      text: [text], // DeepL expects text as an array
       target_lang: targetLang,
-    });
+    };
 
     if (sourceLang) {
-      params.append('source_lang', sourceLang);
+      requestBody.source_lang = sourceLang;
     }
 
     // Make request to DeepL API
@@ -69,9 +86,9 @@ export default async function handler(
       method: 'POST',
       headers: {
         'Authorization': `DeepL-Auth-Key ${apiKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: params.toString(),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
