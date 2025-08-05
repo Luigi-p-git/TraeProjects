@@ -14,6 +14,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Play, Pause, Square, Languages, Volume2, Settings, Save } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface MainContentProps {
   className?: string;
@@ -274,15 +275,18 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
               </div>
             </motion.div>
             
-            {/* Settings Button */}
-            <motion.button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Settings className="w-5 h-5" />
-            </motion.button>
+            {/* Theme Toggle and Settings */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <motion.button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Settings className="w-5 h-5" />
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>

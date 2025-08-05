@@ -2,6 +2,7 @@ import { MainContent } from "@/components/layout/MainContent";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { HistoryItem, useHistory } from "@/hooks/useHistory";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
 import { useState, useRef } from "react";
 
 function App() {
@@ -32,24 +33,31 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="flex h-screen">
-        <Sidebar 
-          className="w-64 border-r border-border/50" 
-          onHistoryLoad={handleHistoryLoad}
-          onResetSession={handleResetSession}
-          activeHistoryId={activeHistoryId}
-          historyHook={historyHook}
-        />
-        <MainContent 
-          ref={mainContentRef}
-          className="flex-1" 
-          onHistoryLoad={handleHistoryLoad}
-          activeHistoryId={activeHistoryId}
-          historyHook={historyHook}
-        />
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="flex h-screen">
+          <Sidebar 
+            className="w-64 border-r border-border/50" 
+            onHistoryLoad={handleHistoryLoad}
+            onResetSession={handleResetSession}
+            activeHistoryId={activeHistoryId}
+            historyHook={historyHook}
+          />
+          <MainContent 
+            ref={mainContentRef}
+            className="flex-1" 
+            onHistoryLoad={handleHistoryLoad}
+            activeHistoryId={activeHistoryId}
+            historyHook={historyHook}
+          />
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
 
