@@ -127,13 +127,10 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
       const textToPlay = appMode === 'text-to-speech' ? textInput : transcribedText;
       if (translatedText.trim()) {
         // Play translated text with target language
-        const langCode = targetLanguage === 'EN' ? 'en-US' : 
-                        targetLanguage === 'ES' ? 'es-ES' : 
-                        targetLanguage === 'FR' ? 'fr-FR' : 'en-US';
-        await speak(translatedText, langCode);
+        await speak(translatedText);
       } else if (textToPlay && textToPlay.trim()) {
         // Play text with source language
-        await speak(textToPlay, transcriptionLanguage);
+        await speak(textToPlay);
       }
     }
   };
@@ -241,33 +238,35 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
       <div className="border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <motion.div 
-                className="flex items-center gap-3"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <img 
-                  src={VoicePalLogo} 
-                  alt="VoicePal Logo" 
-                  className="w-8 h-8"
-                />
-                <h2 className="text-2xl font-bold text-foreground">
-                  VoicePal
-                </h2>
-              </motion.div>
-              <motion.p 
-                className="text-sm text-muted-foreground mt-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                {appMode === 'speech-to-text' 
-                  ? 'Start speaking to see your words transcribed in real-time'
-                  : 'Enter text to convert it to speech with natural voices'
-                }
-              </motion.p>
+            <div className="flex-1 flex justify-center">
+              <div>
+                <motion.div 
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <img 
+                    src={VoicePalLogo} 
+                    alt="VoicePal Logo" 
+                    className="w-12 h-6"
+                  />
+                  <h2 className="text-2xl font-bold text-foreground">
+                    VoicePal
+                  </h2>
+                </motion.div>
+                <motion.p 
+                  className="text-sm text-muted-foreground mt-1 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  {appMode === 'speech-to-text' 
+                    ? 'Start speaking to see your words transcribed in real-time'
+                    : 'Enter text to convert it to speech with natural voices'
+                  }
+                </motion.p>
+              </div>
             </div>
             
             {/* Mode Toggle - Pill Shaped */}

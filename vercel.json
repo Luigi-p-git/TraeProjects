@@ -1,12 +1,4 @@
 {
-  "functions": {
-    "api/translate.ts": {
-      "runtime": "nodejs18.x"
-    },
-    "api/generate-audio.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",

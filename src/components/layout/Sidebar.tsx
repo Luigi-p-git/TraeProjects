@@ -79,10 +79,10 @@ export function Sidebar({ className, onHistoryLoad, onResetSession, activeHistor
         >
           <div className="flex items-center gap-3">
             <img 
-               src={VoicePalLogo} 
-               alt="VoicePal Logo" 
-               className="w-6 h-6"
-             />
+                src={VoicePalLogo} 
+                alt="VoicePal Logo" 
+                className="w-10 h-5"
+              />
             <h2 className="text-lg font-semibold text-foreground">VoicePal</h2>
           </div>
           <p className="text-sm text-muted-foreground">

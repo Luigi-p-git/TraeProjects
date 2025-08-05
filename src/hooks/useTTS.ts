@@ -43,7 +43,7 @@ interface TTSHook {
   status: TTSStatus;
   selectedVoice: ElevenLabsVoiceKey;
   setSelectedVoice: (voice: ElevenLabsVoiceKey) => void;
-  speak: (text: string, languageCode?: string) => Promise<void>;
+  speak: (text: string) => Promise<void>;
   stopSpeech: () => Promise<void>;
   downloadAudio: (text: string, filename?: string) => Promise<void>;
   lastGeneratedAudio: string | null;
@@ -105,7 +105,7 @@ export function useTTS(): TTSHook {
     }
   };
 
-  const speak = async (text: string, languageCode?: string) => {
+  const speak = async (text: string) => {
     if (!text.trim()) return;
 
     try {
