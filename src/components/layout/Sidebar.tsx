@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useHistory, HistoryItem } from "@/hooks/useHistory";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Clock, Languages } from "lucide-react";
+import { Trash2, Clock, Languages, Archive, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 interface SidebarProps {
@@ -109,13 +109,61 @@ export function Sidebar({ className, onHistoryLoad, onResetSession, activeHistor
             <AnimatePresence>
               {history.length === 0 ? (
                 <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-8 text-muted-foreground text-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="text-center py-12 px-4"
                 >
-                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No saved transcriptions</p>
-                  <p className="text-xs mt-1">Use the "Save" button to create your first record</p>
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+                    className="relative mb-6"
+                  >
+                    <div className="relative mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <Archive className="w-8 h-8 text-primary/60" />
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          opacity: [0.5, 0.8, 0.5]
+                        }}
+                        transition={{ 
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute inset-0 rounded-full bg-primary/10"
+                      />
+                    </div>
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 5, -5, 0],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ 
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1
+                      }}
+                      className="absolute -top-1 -right-1"
+                    >
+                      <Sparkles className="w-4 h-4 text-primary/40" />
+                    </motion.div>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="space-y-3"
+                  >
+                    <h3 className="text-foreground font-medium">Your saved sessions will appear here</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Start by recording your voice or entering text,<br />
+                      then use the <span className="font-medium text-primary">Save</span> button to preserve your sessions.
+                    </p>
+                  </motion.div>
                 </motion.div>
               ) : (
                 history.map((item, index) => (

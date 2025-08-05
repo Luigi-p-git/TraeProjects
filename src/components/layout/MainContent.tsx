@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -529,51 +530,96 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
               <div className="flex items-center gap-3">
                 {appMode === 'speech-to-text' && (
                   <>
-                    {/* Record Button - Large Pill Shape */}
-                    <motion.button
-                      onClick={toggleTranscription}
-                      disabled={status === 'Error'}
-                      data-testid="mic-button"
-                      className={cn(
-                        "flex items-center gap-3 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg",
-                        isListening
-                          ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                          : "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground",
-                        status === 'Error' && "opacity-50 cursor-not-allowed"
-                      )}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      animate={isListening ? { scale: [1, 1.05, 1] } : {}}
-                      transition={isListening ? { duration: 1, repeat: Infinity } : { duration: 0.2 }}
-                    >
-                      {isListening ? (
-                        <>
-                          <MicOff className="w-6 h-6" />
-                          Stop Recording
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-6 h-6" />
-                          Start Recording
-                        </>
-                      )}
-                    </motion.button>
+                    {/* Record Button - Large Pill Shape with Breathing Animation */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={toggleTranscription}
+                          disabled={status === 'Error'}
+                          data-testid="mic-button"
+                          className={cn(
+                            "flex items-center gap-3 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg relative overflow-hidden",
+                            isListening
+                              ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                              : "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground",
+                            status === 'Error' && "opacity-50 cursor-not-allowed"
+                          )}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          animate={isListening 
+                            ? { scale: [1, 1.05, 1] } 
+                            : { 
+                                scale: [1, 1.02, 1],
+                                boxShadow: [
+                                  "0 4px 20px rgba(var(--primary), 0.3)",
+                                  "0 8px 30px rgba(var(--primary), 0.4)",
+                                  "0 4px 20px rgba(var(--primary), 0.3)"
+                                ]
+                              }
+                          }
+                          transition={isListening 
+                            ? { duration: 1, repeat: Infinity } 
+                            : { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                          }
+                        >
+                          {/* Breathing glow effect when not recording */}
+                          {!isListening && (
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full"
+                              animate={{
+                                opacity: [0.5, 0.8, 0.5],
+                                scale: [1, 1.05, 1]
+                              }}
+                              transition={{
+                                duration: 2.5,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                            />
+                          )}
+                          
+                          <div className="relative z-10 flex items-center gap-3">
+                            {isListening ? (
+                              <>
+                                <MicOff className="w-6 h-6" />
+                                Stop Recording
+                              </>
+                            ) : (
+                              <>
+                                <Mic className="w-6 h-6" />
+                                Start Recording
+                              </>
+                            )}
+                          </div>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isListening ? "Stop voice recording" : "Start voice recording"}</p>
+                      </TooltipContent>
+                    </Tooltip>
                     
                     {/* Clear Button */}
-                    <motion.button
-                      onClick={clearTranscription}
-                      disabled={!transcribedText}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                        !transcribedText
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-secondary/80 hover:bg-secondary text-secondary-foreground hover:scale-105"
-                      )}
-                      whileHover={transcribedText ? { scale: 1.05 } : {}}
-                      whileTap={transcribedText ? { scale: 0.95 } : {}}
-                    >
-                      Clear
-                    </motion.button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={clearTranscription}
+                          disabled={!transcribedText}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                            !transcribedText
+                              ? "bg-muted text-muted-foreground cursor-not-allowed"
+                              : "bg-secondary/80 hover:bg-secondary text-secondary-foreground hover:scale-105"
+                          )}
+                          whileHover={transcribedText ? { scale: 1.05 } : {}}
+                          whileTap={transcribedText ? { scale: 0.95 } : {}}
+                        >
+                          Clear
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clear transcribed text</p>
+                      </TooltipContent>
+                    </Tooltip>
                     
                     {/* Save Button */}
                     {(() => {
@@ -583,22 +629,29 @@ export const MainContent = forwardRef<any, MainContentProps>(({ className, onHis
                       const hasValidText = currentText && currentText.trim();
                       
                       return (
-                        <motion.button
-                          onClick={handleSaveToHistory}
-                          disabled={isDisabled}
-                          data-testid="save-button"
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                            isDisabled
-                              ? "bg-muted text-muted-foreground cursor-not-allowed"
-                              : "bg-green-500/80 hover:bg-green-500 text-white hover:scale-105"
-                          )}
-                          whileHover={hasValidText ? { scale: 1.05 } : {}}
-                          whileTap={hasValidText ? { scale: 0.95 } : {}}
-                        >
-                          <Save className="w-4 h-4" />
-                          Save
-                        </motion.button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <motion.button
+                              onClick={handleSaveToHistory}
+                              disabled={isDisabled}
+                              data-testid="save-button"
+                              className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                                isDisabled
+                                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                  : "bg-green-500/80 hover:bg-green-500 text-white hover:scale-105"
+                              )}
+                              whileHover={hasValidText ? { scale: 1.05 } : {}}
+                              whileTap={hasValidText ? { scale: 0.95 } : {}}
+                            >
+                              <Save className="w-4 h-4" />
+                              Save
+                            </motion.button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Save session to history</p>
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     })()}
                   </>

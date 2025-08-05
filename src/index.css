@@ -57,3 +57,73 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Aurora background animations */
+  @keyframes aurora-1 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.3;
+    }
+    33% {
+      transform: translateX(-40%) translateY(-60%) rotate(120deg) scale(1.1);
+      opacity: 0.5;
+    }
+    66% {
+      transform: translateX(-60%) translateY(-40%) rotate(240deg) scale(0.9);
+      opacity: 0.4;
+    }
+  }
+  
+  @keyframes aurora-2 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translateX(-30%) translateY(-70%) rotate(180deg) scale(1.2);
+      opacity: 0.4;
+    }
+  }
+  
+  @keyframes aurora-3 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.25;
+    }
+    25% {
+      transform: translateX(-70%) translateY(-30%) rotate(90deg) scale(0.8);
+      opacity: 0.3;
+    }
+    75% {
+      transform: translateX(-30%) translateY(-70%) rotate(270deg) scale(1.1);
+      opacity: 0.35;
+    }
+  }
+  
+  .aurora-1 {
+    animation: aurora-1 20s ease-in-out infinite;
+  }
+  
+  .aurora-2 {
+    animation: aurora-2 25s ease-in-out infinite;
+  }
+  
+  .aurora-3 {
+    animation: aurora-3 30s ease-in-out infinite;
+  }
+  
+  /* Breathing glow effect */
+  @keyframes breathing-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(var(--primary), 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(var(--primary), 0.5), 0 0 40px rgba(var(--primary), 0.3);
+    }
+  }
+  
+  .breathing-glow {
+    animation: breathing-glow 3s ease-in-out infinite;
+  }
+}
