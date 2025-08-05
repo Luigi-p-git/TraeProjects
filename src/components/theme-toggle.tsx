@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
@@ -34,7 +32,7 @@ export function ThemeToggle() {
         transition={{ duration: 0.2 }}
         className="absolute"
       >
-        <Sun className="h-4 w-4" />
+        <Sun className="h-4 w-4 text-yellow-500" />
       </motion.div>
       <motion.div
         initial={false}
