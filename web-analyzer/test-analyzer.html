@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAnalyzer Test</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/cheerio@1.0.0-rc.12/dist/browser/cheerio.min.js"></script>
+</head>
+<body>
+    <h1>WebAnalyzer Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Simplified WebAnalyzer for testing
+        class TestWebAnalyzer {
+            async analyze(url) {
+                console.log(`Starting analysis of: ${url}`);
+                
+                const proxies = [
+                    'https://api.allorigins.win/get?url=',
+                    'https://corsproxy.io/?',
+                    'https://cors-anywhere.herokuapp.com/'
+                ];
+                
+                for (let i = 0; i < proxies.length; i++) {
+                    try {
+                        console.log(`Trying proxy ${i + 1}: ${proxies[i]}`);
+                        
+                        const proxyUrl = proxies[i] + encodeURIComponent(url);
+                        const response = await axios.get(proxyUrl, {
+                            timeout: 10000,
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        console.log('Response received:', response.status);
+                        
+                        let html;
+                        if (response.data.contents) {
+                            html = response.data.contents;
+                        } else if (typeof response.data === 'string') {
+                            html = response.data;
+                        } else {
+                            throw new Error('Invalid response format');
+                        }
+                        
+                        console.log('HTML length:', html.length);
+                        console.log('HTML preview:', html.substring(0, 200));
+                        
+                        // Parse with Cheerio
+                        const $ = cheerio.load(html);
+                        
+                        // Extract basic information
+                        const title = $('title').text() || 'No title';
+                        const metaDescription = $('meta[name="description"]').attr('content') || 'No description';
+                        const scripts = $('script[src]').map((i, el) => $(el).attr('src')).get();
+                        const stylesheets = $('link[rel="stylesheet"]').map((i, el) => $(el).attr('href')).get();
+                        
+                        const result = {
+                            url,
+                            title,
+                            metaDescription,
+                            techStack: {
+                                frontend: this.detectFrontendTech($, html),
+                                backend: this.detectBackendTech($, html),
+                                css: this.detectCSSFrameworks($, html),
+                                javascript: this.detectJSLibraries($, html),
+                                analytics: this.detectAnalytics($, html),
+                                hosting: this.detectHosting($, html),
+                                other: this.detectOtherTech($, html)
+                            },
+                            design: {
+                                colors: this.extractColors($, html),
+                                fonts: this.extractFonts($, html),
+                                spacing: this.analyzeSpacing($, html),
+                                breakpoints: this.extractBreakpoints($, html)
+                            },
+                            performance: {
+                                loadTime: Date.now() - this.startTime,
+                                resourceCount: scripts.length + stylesheets.length,
+                                scripts: scripts.length,
+                                stylesheets: stylesheets.length
+                            },
+                            seo: {
+                                title,
+                                metaDescription,
+                                headings: {
+                                    h1: $('h1').length,
+                                    h2: $('h2').length,
+                                    h3: $('h3').length
+                                },
+                                images: $('img').length,
+                                links: $('a').length
+                            },
+                            components: this.extractComponents($)
+                        };
+                        
+                        console.log('Analysis completed successfully');
+                        return result;
+                        
+                    } catch (error) {
+                        console.error(`Proxy ${i + 1} failed:`, error.message);
+                        if (i === proxies.length - 1) {
+                            throw new Error(`All proxies failed. Last error: ${error.message}`);
+                        }
+                    }
+                }
+            }
+            
+            detectFrontendTech($, html) {
+                const frameworks = [];
+                if (html.includes('react') || html.includes('React')) frameworks.push('React');
+                if (html.includes('vue') || html.includes('Vue')) frameworks.push('Vue.js');
+                if (html.includes('angular') || html.includes('Angular')) frameworks.push('Angular');
+                if (html.includes('svelte') || html.includes('Svelte')) frameworks.push('Svelte');
+                return frameworks.length > 0 ? frameworks : ['HTML'];
+            }
+            
+            detectBackendTech($, html) {
+                const tech = [];
+                if (html.includes('php') || $('meta[name="generator"]').attr('content')?.includes('PHP')) tech.push('PHP');
+                if (html.includes('asp.net') || html.includes('aspnet')) tech.push('ASP.NET');
+                if (html.includes('django') || html.includes('Django')) tech.push('Django');
+                if (html.includes('rails') || html.includes('Ruby')) tech.push('Ruby on Rails');
+                return tech.length > 0 ? tech : ['Unknown'];
+            }
+            
+            detectCSSFrameworks($, html) {
+                const frameworks = [];
+                if (html.includes('bootstrap') || html.includes('Bootstrap')) frameworks.push('Bootstrap');
+                if (html.includes('tailwind') || html.includes('Tailwind')) frameworks.push('Tailwind CSS');
+                if (html.includes('bulma') || html.includes('Bulma')) frameworks.push('Bulma');
+                if (html.includes('foundation') || html.includes('Foundation')) frameworks.push('Foundation');
+                return frameworks.length > 0 ? frameworks : ['Custom CSS'];
+            }
+            
+            detectJSLibraries($, html) {
+                const libraries = [];
+                if (html.includes('jquery') || html.includes('jQuery')) libraries.push('jQuery');
+                if (html.includes('lodash') || html.includes('underscore')) libraries.push('Lodash/Underscore');
+                if (html.includes('moment') || html.includes('dayjs')) libraries.push('Date Library');
+                return libraries.length > 0 ? libraries : ['Vanilla JS'];
+            }
+            
+            detectAnalytics($, html) {
+                const analytics = [];
+                if (html.includes('google-analytics') || html.includes('gtag')) analytics.push('Google Analytics');
+                if (html.includes('facebook.net') || html.includes('fbevents')) analytics.push('Facebook Pixel');
+                if (html.includes('hotjar') || html.includes('Hotjar')) analytics.push('Hotjar');
+                return analytics;
+            }
+            
+            detectHosting($, html) {
+                const hosting = [];
+                if (html.includes('cloudflare') || html.includes('Cloudflare')) hosting.push('Cloudflare');
+                if (html.includes('amazonaws') || html.includes('AWS')) hosting.push('AWS');
+                if (html.includes('vercel') || html.includes('Vercel')) hosting.push('Vercel');
+                if (html.includes('netlify') || html.includes('Netlify')) hosting.push('Netlify');
+                return hosting.length > 0 ? hosting : ['Unknown'];
+            }
+            
+            detectOtherTech($, html) {
+                const other = [];
+                if (html.includes('wordpress') || html.includes('WordPress')) other.push('WordPress');
+                if (html.includes('shopify') || html.includes('Shopify')) other.push('Shopify');
+                if (html.includes('wix') || html.includes('Wix')) other.push('Wix');
+                return other;
+            }
+            
+            extractColors($, html) {
+                const colors = [];
+                const colorRegex = /#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/g;
+                const matches = html.match(colorRegex);
+                if (matches) {
+                    colors.push(...[...new Set(matches)].slice(0, 10));
+                }
+                return colors.length > 0 ? colors : ['No colors detected'];
+            }
+            
+            extractFonts($, html) {
+                const fonts = [];
+                $('link[href*="fonts"]').each((i, el) => {
+                    const href = $(el).attr('href');
+                    if (href && href.includes('family=')) {
+                        const fontMatch = href.match(/family=([^&:]+)/);
+                        if (fontMatch) fonts.push(fontMatch[1].replace(/\+/g, ' '));
+                    }
+                });
+                return fonts.length > 0 ? fonts : ['System fonts'];
+            }
+            
+            analyzeSpacing($, html) {
+                return ['Standard spacing detected'];
+            }
+            
+            extractBreakpoints($, html) {
+                const breakpoints = [];
+                if (html.includes('@media')) {
+                    const mediaQueries = html.match(/@media[^{]+/g);
+                    if (mediaQueries) {
+                        breakpoints.push(...mediaQueries.slice(0, 5));
+                    }
+                }
+                return breakpoints.length > 0 ? breakpoints : ['No breakpoints detected'];
+            }
+            
+            extractComponents($) {
+                const components = [];
+                const tags = ['header', 'nav', 'main', 'section', 'article', 'aside', 'footer', 'div', 'span'];
+                tags.forEach(tag => {
+                    const count = $(tag).length;
+                    if (count > 0) {
+                        components.push({ type: tag, count });
+                    }
+                });
+                return components;
+            }
+        }
+        
+        // Test the analyzer
+        async function runTest() {
+            const analyzer = new TestWebAnalyzer();
+            const resultsDiv = document.getElementById('results');
+            
+            const testUrls = ['https://httpbin.org/html', 'https://example.com'];
+            
+            for (const url of testUrls) {
+                try {
+                    analyzer.startTime = Date.now();
+                    resultsDiv.innerHTML += `<h2>Testing: ${url}</h2>`;
+                    
+                    const result = await analyzer.analyze(url);
+                    
+                    resultsDiv.innerHTML += `<pre>${JSON.stringify(result, null, 2)}</pre><hr>`;
+                    
+                    console.log('=== ANALYSIS RESULT ===');
+                    console.log(JSON.stringify(result, null, 2));
+                    
+                } catch (error) {
+                    console.error('Analysis failed:', error);
+                    resultsDiv.innerHTML += `<p style="color: red;">Error: ${error.message}</p><hr>`;
+                }
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', runTest);
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" fill="#00A8E1"/>
+  <g transform="translate(128, 128)">
+    <!-- Amazon arrow -->
+    <path d="M-60,20 L60,20 L45,35 M60,20 L45,5" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Prime text -->
+    <text x="0" y="-20" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">PRIME</text>
+  </g>
+</svg>

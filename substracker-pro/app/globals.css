@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    /* Futuristic Color Palette */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 263 70% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 263 70% 50%;
+    --radius: 1rem;
+    
+    /* Neon Colors */
+    --neon-cyan: 180 100% 50%;
+    --neon-purple: 263 70% 50%;
+    --neon-pink: 330 81% 60%;
+    --neon-green: 120 100% 50%;
+    --neon-orange: 30 100% 50%;
+    
+    /* Glass Effects */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: radial-gradient(ellipse at top, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  /* Advanced Glass Morphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Neon Effects */
+  .neon-border {
+    border: 1px solid hsl(var(--neon-cyan));
+    box-shadow: 0 0 5px hsl(var(--neon-cyan)),
+                0 0 10px hsl(var(--neon-cyan)),
+                0 0 15px hsl(var(--neon-cyan));
+  }
+  
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3),
+                0 0 40px rgba(0, 255, 255, 0.2),
+                0 0 60px rgba(0, 255, 255, 0.1);
+  }
+  
+  /* Futuristic Gradients */
+  .gradient-primary {
+    background: linear-gradient(135deg, 
+      hsl(var(--neon-purple)) 0%, 
+      hsl(var(--neon-pink)) 50%, 
+      hsl(var(--neon-cyan)) 100%);
+  }
+  
+  .gradient-card {
+    background: linear-gradient(145deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.02) 100%);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, 
+      hsl(var(--neon-cyan)) 0%, 
+      hsl(var(--neon-purple)) 50%, 
+      hsl(var(--neon-pink)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Advanced Hover Effects */
+  .card-hover {
+    @apply transition-all duration-500 ease-out;
+    transform-style: preserve-3d;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-8px) rotateX(5deg) rotateY(5deg);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(0, 255, 255, 0.2);
+  }
+  
+  /* Floating Animation */
+  .floating {
+    animation: floating 6s ease-in-out infinite;
+  }
+  
+  @keyframes floating {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  /* Pulse Animation */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulse-glow {
+    from {
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    to {
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4),
+                  0 0 40px rgba(0, 255, 255, 0.3);
+    }
+  }
+  
+  /* Warning States */
+  .warning-glow {
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.4),
+                0 0 40px rgba(255, 165, 0, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  
+  .danger-glow {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4),
+                0 0 40px rgba(255, 0, 0, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  
+  /* Holographic Effect */
+  .holographic {
+    background: linear-gradient(45deg, 
+      transparent 30%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      transparent 70%);
+    background-size: 200% 200%;
+    animation: holographic 3s ease-in-out infinite;
+  }
+  
+  @keyframes holographic {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+}
+
+/* Custom Scrollbar - Futuristic */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, 
+    hsl(var(--neon-cyan)) 0%, 
+    hsl(var(--neon-purple)) 100%);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 255, 255, 0.3);
+  color: white;
+}

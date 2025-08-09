@@ -1,0 +1,50 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - img
+  - heading "Web Analyzer" [level=1]
+  - img
+  - text: Advanced Website Analysis
+- main:
+  - text: Website URL
+  - img
+  - textbox "Website URL" [disabled]: https://trae.ai
+  - button "Analyzing Website..." [disabled]
+  - paragraph: "Try these examples:"
+  - button "github.com" [disabled]
+  - button "stripe.com" [disabled]
+  - button "vercel.com" [disabled]
+  - button "tailwindcss.com" [disabled]
+  - img
+  - heading "Analyzing Website" [level=3]
+  - paragraph: https://trae.ai
+  - text: Analysis Progress 14%
+  - img
+  - heading "Fetching website" [level=4]
+  - paragraph: Fetching website...
+  - img
+  - heading "Detecting technologies" [level=4]
+  - paragraph: Analyzing tech stack...
+  - img
+  - heading "Extracting design system" [level=4]
+  - paragraph: Analyzing colors, fonts, and spacing...
+  - img
+  - heading "Mapping components" [level=4]
+  - paragraph: Identifying UI components...
+  - img
+  - heading "Analyzing SEO" [level=4]
+  - paragraph: Checking meta tags and structure...
+  - img
+  - heading "Measuring performance" [level=4]
+  - paragraph: Analyzing load times and optimization...
+  - img
+  - heading "Capturing screenshot" [level=4]
+  - paragraph: Taking visual snapshot...
+  - paragraph:
+    - text: 💡
+    - strong: Did you know?
+    - text: Our analyzer can detect over 1,000 different technologies and frameworks!
+- contentinfo:
+  - paragraph: © 2024 Web Analyzer. Built with React, TypeScript & Tailwind CSS.
+```

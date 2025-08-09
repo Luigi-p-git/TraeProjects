@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>VoicePal needs access to the microphone to capture your voice for transcription.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>VoicePal needs access to speech recognition to transcribe your voice.</string>
+</dict>
+</plist>

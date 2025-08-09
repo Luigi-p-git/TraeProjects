@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Aurora background animations */
+  @keyframes aurora-1 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.3;
+    }
+    33% {
+      transform: translateX(-40%) translateY(-60%) rotate(120deg) scale(1.1);
+      opacity: 0.5;
+    }
+    66% {
+      transform: translateX(-60%) translateY(-40%) rotate(240deg) scale(0.9);
+      opacity: 0.4;
+    }
+  }
+  
+  @keyframes aurora-2 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translateX(-30%) translateY(-70%) rotate(180deg) scale(1.2);
+      opacity: 0.4;
+    }
+  }
+  
+  @keyframes aurora-3 {
+    0%, 100% {
+      transform: translateX(-50%) translateY(-50%) rotate(0deg) scale(1);
+      opacity: 0.25;
+    }
+    25% {
+      transform: translateX(-70%) translateY(-30%) rotate(90deg) scale(0.8);
+      opacity: 0.3;
+    }
+    75% {
+      transform: translateX(-30%) translateY(-70%) rotate(270deg) scale(1.1);
+      opacity: 0.35;
+    }
+  }
+  
+  .aurora-1 {
+    animation: aurora-1 20s ease-in-out infinite;
+  }
+  
+  .aurora-2 {
+    animation: aurora-2 25s ease-in-out infinite;
+  }
+  
+  .aurora-3 {
+    animation: aurora-3 30s ease-in-out infinite;
+  }
+  
+  /* Breathing glow effect */
+  @keyframes breathing-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(var(--primary), 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(var(--primary), 0.5), 0 0 40px rgba(var(--primary), 0.3);
+    }
+  }
+  
+  .breathing-glow {
+    animation: breathing-glow 3s ease-in-out infinite;
+  }
+}
